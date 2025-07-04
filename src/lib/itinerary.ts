@@ -20,23 +20,32 @@ import { ItineraryFlowOutput } from './genkit/types';
 import { itineraryFlow } from './genkit/itineraryFlow';
 
 export async function generateItinerary(
-  previousState: null | undefined | ItineraryFlowOutput,
+  previousState: null | undefined | ItineraryFlowOutput, // previousState is part of useActionState, not directly used here for inputs
   formData: FormData,
 ): Promise<ItineraryFlowOutput | undefined> {
   const request = formData.get('request');
   if (!request) {
+    // It might be better to return an error state or object that the frontend can handle
     throw new Error('No request provided');
   }
 
-  const images: File[] = formData.getAll('images[]') as File[]; // fix upload content-type
+  const modelChoice = formData.get('modelChoice') as string | null;
+
+  // Assuming 'images[]' is the name used in FormFields for file inputs
+  const images: File[] = formData.getAll('images[]') as File[];
   const imageUrls = await Promise.all(
     images.filter((i) => i.size > 0).map(fileToDataURL),
   );
 
-  return await itineraryFlow({
+  // Construct the input for itineraryFlow, now including modelChoice
+  const flowInput = {
     request: request.toString(),
     imageUrls,
-  });
+    // Only include modelChoice if it's present and valid, otherwise itineraryFlow will use its default
+    ...(modelChoice && { modelChoice: modelChoice }),
+  };
+
+  return await itineraryFlow(flowInput);
 }
 
 export async function fileToDataURL(file: File): Promise<string> {

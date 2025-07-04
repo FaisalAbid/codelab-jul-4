@@ -17,6 +17,7 @@
 import { genkit } from 'genkit';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { vertexAI } from '@genkit-ai/vertexai';
+import { openAI } from 'genkitx-openai';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -35,5 +36,6 @@ export const ai = genkit({
       projectId: getProjectId(),
       location: 'us-central1',
     }),
+    openAI(),
   ],
 });

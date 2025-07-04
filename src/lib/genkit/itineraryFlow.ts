@@ -26,6 +26,7 @@ import {
   placesRetriever,
 } from './placesRetriever';
 import { ai } from './genkit.config';
+import { geminiPro, gpt4o } from 'genkitx-openai'; // Assuming gpt4o is the desired OpenAI model
 
 import { z } from 'genkit';
 
@@ -45,20 +46,26 @@ export const ItineraryGeneratorPromptInput = ai.defineSchema(
   }),
 );
 
-const generateItinerary = async (request: string, place: Place) => {
+const generateItinerary = async (request: string, place: Place, modelChoice?: string) => {
   const activities = await getActivitiesForDestination(place.ref);
+
+  const selectedModel = modelChoice === 'openai' ? gpt4o : geminiPro; // Default to geminiPro
 
   const itineraryGenerator = await ai.prompt<
     typeof ItineraryGeneratorPromptInput,
     typeof Destination,
     z.ZodTypeAny
-  >('itineraryGen');
-  const response = await itineraryGenerator({
-    request,
-    place: place.name,
-    placeDescription: place.knownFor,
-    activities,
-  });
+  >('itineraryGen'); // This prompt likely needs to be model-agnostic or we might need separate prompts
+
+  const response = await itineraryGenerator(
+    {
+      request,
+      place: place.name,
+      placeDescription: place.knownFor,
+      activities,
+    },
+    { model: selectedModel } // Pass the selected model to the prompt
+  );
 
   const destination = response.output;
   if (!destination) {
@@ -72,41 +79,41 @@ const generateItinerary = async (request: string, place: Place) => {
 export const itineraryFlow = ai.defineFlow(
   {
     name: 'itineraryFlow',
-    inputSchema: ItineraryFlowInput,
+    inputSchema: ItineraryFlowInput.extend({ modelChoice: z.string().optional() }), // Add modelChoice to input
     outputSchema: ItineraryFlowOutput,
   },
 
   async (tripDetails) => {
-    const imgDescription = '';
-    // TODO: 2. Replace the line above with this:
-    // const imgDescription = await ai.run('imgDescription', async () => {
-    //   if (!tripDetails.imageUrls?.length) {
-    //     return '';
-    //   }
-    //   console.log('Generating image description...');
-    //   const images = tripDetails.imageUrls.map((url) => ({
-    //     media: { url },
-    //   }));
-    //   const response = await ai.generate({
-    //     model: 'vertexai/gemini-2.5-flash',
-    //     prompt: [
-    //       {
-    //         text: `Describe these image(s) in a detailed paragraph as though it was a tourist destination.
-    // Do not give the name of the location, only give a description of what you see in the image and what you think a tourist would like it described as in a dream vacation.`,
-    //       },
-    //       ...images,
-    //     ],
-    //   });
-    //   console.log('Image description generated:', response.text);
-    //   return response.text;
-    // });
+    const selectedModel = tripDetails.modelChoice === 'openai' ? gpt4o : geminiPro; // Default to geminiPro
+
+    const imgDescription = await ai.run('imgDescription', async () => {
+      if (!tripDetails.imageUrls?.length) {
+        return '';
+      }
+      console.log(`Generating image description using ${tripDetails.modelChoice || 'default model'}...`);
+      const images = tripDetails.imageUrls.map((url) => ({
+        media: { url },
+      }));
+      const response = await ai.generate({
+        model: selectedModel, // Use selected model for image description
+        prompt: [
+          {
+            text: `Describe these image(s) in a detailed paragraph as though it was a tourist destination.
+    Do not give the name of the location, only give a description of what you see in the image and what you think a tourist would like it described as in a dream vacation.`,
+          },
+          ...images,
+        ],
+      });
+      console.log('Image description generated:', response.text);
+      return response.text;
+    });
 
     const places = await ai.run(
       'Retrieve matching places',
       { imgDescription, request: tripDetails.request },
       async () => {
         const docs = await ai.retrieve({
-          retriever: placesRetriever,
+          retriever: placesRetriever, // Retrievers are typically model-agnostic, but underlying embeddings might be model-specific
           query: `${tripDetails.request}\n${imgDescription}`,
           options: {
             limit: 3,
@@ -136,7 +143,7 @@ export const itineraryFlow = ai.defineFlow(
     const itineraries = await Promise.all(
       places.map((place, i) =>
         ai.run(`Generate itinerary #${i + 1}`, () =>
-          generateItinerary(tripDetails.request, place),
+          generateItinerary(tripDetails.request, place, tripDetails.modelChoice),
         ),
       ),
     );
