@@ -29,18 +29,21 @@ export default function Home() {
       {/* CTAs */}
       <section className="flex flex-col w-full p-5"> {/* Removed gap-3.5 here, will be handled by AboutPopup margin */}
         <AboutPopup /> {/* Added AboutPopup component */}
+        <p className="text-center text-lg font-medium mb-4">
+          Choose a service to power your trip planning:
+        </p>
         <Link
           href={LEGACY.HOME}
           className="text-background bg-foreground w-full p-3 rounded-xl text-lg text-center font-medium mb-3.5" // Added mb-3.5
         >
-          Find my dream trip
+          Use OpenAI
         </Link>
 
         <Link
           href={GEMINI.HOME}
           className="w-full p-3 rounded-xl text-lg text-center font-medium gradient text-background animate-shadow"
         >
-          Plan my dream trip with AI
+          Use Gemini
         </Link>
       </section>
     </main>
