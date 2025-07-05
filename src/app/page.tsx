@@ -31,14 +31,14 @@ export default function Home() {
         <AboutPopup /> {/* Added AboutPopup component */}
         <Link
           href={LEGACY.HOME}
-          className="text-background bg-foreground w-full p-3 rounded-xl text-lg text-center font-medium mb-3.5" // Added mb-3.5
+          className="text-background bg-red-500 w-full p-3 rounded-xl text-lg text-center font-medium mb-3.5" // Added mb-3.5
         >
           Find my dream trip
         </Link>
 
         <Link
           href={GEMINI.HOME}
-          className="w-full p-3 rounded-xl text-lg text-center font-medium gradient text-background animate-shadow"
+          className="w-full p-3 rounded-xl text-lg text-center font-medium bg-red-500 text-background animate-shadow"
         >
           Plan my dream trip with AI
         </Link>
