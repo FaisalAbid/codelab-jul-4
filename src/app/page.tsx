@@ -16,6 +16,7 @@
 
 import Link from 'next/link';
 
+import AboutPopup from '@/components/AboutPopup'; // Added import
 import TiltedCardsAnimation from '@/components/TiltedCardsAnimation';
 import { GEMINI, LEGACY } from '@/lib/routes';
 
@@ -26,10 +27,11 @@ export default function Home() {
       <TiltedCardsAnimation />
 
       {/* CTAs */}
-      <section className="flex flex-col gap-3.5 w-full p-5">
+      <section className="flex flex-col w-full p-5"> {/* Removed gap-3.5 here, will be handled by AboutPopup margin */}
+        <AboutPopup /> {/* Added AboutPopup component */}
         <Link
           href={LEGACY.HOME}
-          className="text-background bg-foreground w-full p-3 rounded-xl text-lg text-center font-medium"
+          className="text-background bg-foreground w-full p-3 rounded-xl text-lg text-center font-medium mb-3.5" // Added mb-3.5
         >
           Find my dream trip
         </Link>
